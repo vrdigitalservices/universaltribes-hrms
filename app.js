@@ -2,7 +2,7 @@
 const EMPLOYEE_STORAGE_KEY = 'ut_employees';
 const ATTENDANCE_STORAGE_KEY = 'ut_attendance_records';
 
-// ======= Simple Admin Credentials =======
+// ======= Simple Admin Credentials (hardcoded for demo) =======
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD = 'password123';
 
@@ -134,78 +134,62 @@ function renderAttendanceSection() {
       </table>
       <button type="submit" style="margin-top:15px; padding:10px 20px; font-size:16px; cursor:pointer;">Save Attendance</button>
     </form>
-    <p id="attendance-msg" style="color:green; font-weight:600;"></p>
+    <p id="attendance-msg" style="color:green; font-weight:bold; margin-top:12px;"></p>
   `;
 
   contentArea.innerHTML = html;
 
-  // Pre-fill attendance if exists for selected date
-  const attendanceDateInput = document.getElementById('attendance-date');
-  attendanceDateInput.addEventListener('change', () => {
-    fillAttendance(attendanceRecords, attendanceDateInput.value);
-  });
-
-  function fillAttendance(records, date) {
+  function setAttendanceForDate(date) {
+    const attendanceForDate = attendanceRecords[date] || {};
     employees.forEach(emp => {
-      const radios = document.getElementsByName('att-' + emp.id);
-      const status = records[date]?.[emp.id];
-      if (status) {
-        radios.forEach(radio => {
-          radio.checked = radio.value === status;
-        });
+      const status = attendanceForDate[emp.id] || null;
+      if(status) {
+        const radio = document.querySelector(`input[name="att-${emp.id}"][value="${status}"]`);
+        if(radio) radio.checked = true;
       } else {
-        radios.forEach(radio => radio.checked = false);
+        const radios = document.querySelectorAll(`input[name="att-${emp.id}"]`);
+        radios.forEach(r => r.checked = false);
       }
     });
   }
 
-  fillAttendance(attendanceRecords, today);
+  const dateInput = document.getElementById('attendance-date');
+  dateInput.addEventListener('change', () => {
+    setAttendanceForDate(dateInput.value);
+    document.getElementById('attendance-msg').textContent = '';
+  });
 
-  // Handle attendance form submit
+  setAttendanceForDate(today);
+
   const attendanceForm = document.getElementById('attendance-form');
-  const attendanceMsg = document.getElementById('attendance-msg');
-
   attendanceForm.addEventListener('submit', e => {
     e.preventDefault();
-    const date = attendanceDateInput.value;
-    if (!date) {
-      alert('Please select a valid date.');
+    const selectedDate = dateInput.value;
+    if(!selectedDate) {
+      alert('Please select a date.');
       return;
     }
 
-    if (!attendanceRecords[date]) {
-      attendanceRecords[date] = {};
-    }
+    let attendanceForDate = attendanceRecords[selectedDate] || {};
 
-    let allMarked = true;
     employees.forEach(emp => {
-      const radios = document.getElementsByName('att-' + emp.id);
-      const selected = Array.from(radios).find(r => r.checked);
-      if (selected) {
-        attendanceRecords[date][emp.id] = selected.value;
-      } else {
-        allMarked = false;
-      }
+      const selectedRadio = document.querySelector(`input[name="att-${emp.id}"]:checked`);
+      attendanceForDate[emp.id] = selectedRadio ? selectedRadio.value : 'Absent';
     });
 
-    if (!allMarked) {
-      alert('Please mark attendance for all employees.');
-      return;
-    }
-
+    attendanceRecords[selectedDate] = attendanceForDate;
     saveAttendance(attendanceRecords);
-    attendanceMsg.textContent = `Attendance saved for ${date}.`;
+
+    document.getElementById('attendance-msg').textContent = `Attendance saved for ${selectedDate}.`;
   });
 }
 
-// ======= Navigation Button Logic =======
-navButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    navButtons.forEach(btn => btn.classList.remove('active'));
-    button.classList.add('active');
-    const section = button.dataset.section;
-
-    switch(section) {
+// ======= Navigation Buttons =======
+navButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    navButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    switch(btn.dataset.section) {
       case 'dashboard':
         renderDashboard();
         break;
@@ -216,7 +200,7 @@ navButtons.forEach(button => {
         renderAttendanceSection();
         break;
       default:
-        contentArea.innerHTML = `<h2>${section}</h2><p>Section content coming soon...</p>`;
+        contentArea.innerHTML = '<p>Section under construction</p>';
     }
   });
 });
