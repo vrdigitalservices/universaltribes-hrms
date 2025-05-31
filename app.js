@@ -62,11 +62,36 @@ function saveEmployees(employees) {
 }
 
 // ======= Render Dashboard =======
+// Function to format date and time nicely
+function formatDateTime(date) {
+  return date.toLocaleString('en-IN', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+}
+
+// Updated renderDashboard to show live date/time
 function renderDashboard() {
   contentArea.innerHTML = `
     <h2>Dashboard</h2>
     <p>Welcome to Universal Tribes HRMS. Use the navigation menu to manage employees and attendance.</p>
+    <div id="live-date-time" style="font-weight:bold; margin-top:20px; font-size:16px;"></div>
   `;
+
+  const dateTimeElem = document.getElementById('live-date-time');
+  function updateDateTime() {
+    const now = new Date();
+    dateTimeElem.textContent = 'Current Date & Time: ' + formatDateTime(now);
+  }
+
+  updateDateTime(); // show immediately
+  setInterval(updateDateTime, 1000); // update every second
 }
 
 // ======= Render Employee Directory =======
