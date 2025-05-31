@@ -102,6 +102,10 @@
     background: #2563eb;
     border-left-color: #fbbf24;
   }
+  #logout-btn {
+    margin-top: auto;
+    background: #ef4444;
+  }
   main {
     flex-grow: 1;
     background: white;
@@ -136,6 +140,7 @@
   #attendance-msg {
     margin-top: 12px;
     font-weight: 600;
+    color: green;
   }
 </style>
 </head>
@@ -161,7 +166,7 @@
     <button data-section="dashboard" class="active">Dashboard</button>
     <button data-section="employees">Employee Directory</button>
     <button data-section="attendance">Attendance</button>
-    <button id="logout-btn" style="margin-top:auto; background:#ef4444;">Logout</button>
+    <button id="logout-btn">Logout</button>
   </nav>
   <main id="content-area">
     <!-- Content loaded dynamically -->
@@ -169,7 +174,7 @@
 </div>
 
 <script>
-// ======= Data Storage Keys ==========
+// ======= Data Storage Keys =======
 const EMPLOYEE_STORAGE_KEY = 'ut_employees';
 const ATTENDANCE_STORAGE_KEY = 'ut_attendance_records';
 
@@ -177,7 +182,7 @@ const ATTENDANCE_STORAGE_KEY = 'ut_attendance_records';
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD = 'password123';
 
-// ======= Elements ========
+// ======= Elements =======
 const loginPage = document.getElementById('login-page');
 const loginForm = document.getElementById('login-form');
 const loginError = document.getElementById('login-error');
@@ -202,6 +207,7 @@ loginForm.addEventListener('submit', function(e) {
   }
 });
 
+// ======= Logout Logic =======
 logoutBtn.addEventListener('click', () => {
   if(confirm('Are you sure you want to logout?')) {
     loginPage.style.display = 'flex';
@@ -266,7 +272,6 @@ function renderEmployeeDirectory() {
 }
 
 // ======= Attendance Logic =======
-
 function loadAttendance() {
   const data = localStorage.getItem(ATTENDANCE_STORAGE_KEY);
   return data ? JSON.parse(data) : {};
@@ -293,89 +298,83 @@ function renderAttendanceSection() {
         </thead>
         <tbody>
           ${employees.map(emp => `
-            <tr data-id="${emp.id}">
+            <tr>
               <td>${emp.name}</td>
-              <td style="text-align:center;">
+              <td>
                 <label><input type="radio" name="att-${emp.id}" value="Present" /> Present</label>
-                <label style="margin-left:15px;"><input type="radio" name="att-${emp.id}" value="Absent" /> Absent</label>
+                <label><input type="radio" name="att-${emp.id}" value="Absent" checked /> Absent</label>
               </td>
             </tr>
           `).join('')}
         </tbody>
       </table>
-      <button type="submit" style="margin-top:15px; padding:10px 20px; font-size:16px; cursor:pointer;">Save Attendance</button>
+      <button type="submit" style="margin-top: 16px; padding: 10px 20px; font-size: 16px;">Save Attendance</button>
     </form>
-    <p id="attendance-msg" style="color:green; font-weight:bold; margin-top:12px;"></p>
+    <div id="attendance-msg"></div>
   `;
 
   contentArea.innerHTML = html;
 
-  function setAttendanceForDate(date) {
-    const attendanceForDate = attendanceRecords[date] || {};
-    employees.forEach(emp => {
-      const status = attendanceForDate[emp.id] || null;
-      if(status) {
-        const radio = document.querySelector(`input[name="att-${emp.id}"][value="${status}"]`);
-        if(radio) radio.checked = true;
-      } else {
-        const radios = document.querySelectorAll(`input[name="att-${emp.id}"]`);
-        radios.forEach(r => r.checked = false);
-      }
-    });
-  }
+  const attendanceDateInput = document.getElementById('attendance-date');
+  const attendanceForm = document.getElementById('attendance-form');
+  const attendanceMsg = document.getElementById('attendance-msg');
 
-  const dateInput = document.getElementById('attendance-date');
-  dateInput.addEventListener('change', () => {
-    setAttendanceForDate(dateInput.value);
-    document.getElementById('attendance-msg').textContent = '';
+  // On date change, load saved attendance for that date if exists
+  attendanceDateInput.addEventListener('change', () => {
+    const selectedDate = attendanceDateInput.value;
+    const recordsForDate = attendanceRecords[selectedDate] || {};
+    // Update radios to reflect saved data or default to Absent
+    employees.forEach(emp => {
+      const radios = document.getElementsByName(`att-${emp.id}`);
+      const savedStatus = recordsForDate[emp.id] || 'Absent';
+      radios.forEach(radio => {
+        radio.checked = (radio.value === savedStatus);
+      });
+    });
+    attendanceMsg.textContent = '';
   });
 
-  setAttendanceForDate(today);
+  // Load attendance for initial date on render
+  attendanceDateInput.dispatchEvent(new Event('change'));
 
-  const attendanceForm = document.getElementById('attendance-form');
+  // Handle attendance form submit
   attendanceForm.addEventListener('submit', e => {
     e.preventDefault();
-    const selectedDate = dateInput.value;
-    if(!selectedDate) {
-      alert('Please select a date.');
+    const selectedDate = attendanceDateInput.value;
+    if (!selectedDate) {
+      attendanceMsg.style.color = 'red';
+      attendanceMsg.textContent = 'Please select a valid date.';
       return;
     }
-
-    let attendanceForDate = attendanceRecords[selectedDate] || {};
-
+    // Save attendance for the date
+    attendanceRecords[selectedDate] = {};
     employees.forEach(emp => {
-      const selectedRadio = document.querySelector(`input[name="att-${emp.id}"]:checked`);
-      attendanceForDate[emp.id] = selectedRadio ? selectedRadio.value : 'Absent';
+      const radios = document.getElementsByName(`att-${emp.id}`);
+      radios.forEach(radio => {
+        if(radio.checked) {
+          attendanceRecords[selectedDate][emp.id] = radio.value;
+        }
+      });
     });
-
-    attendanceRecords[selectedDate] = attendanceForDate;
     saveAttendance(attendanceRecords);
-
-    document.getElementById('attendance-msg').textContent = `Attendance saved for ${selectedDate}.`;
+    attendanceMsg.style.color = 'green';
+    attendanceMsg.textContent = `Attendance saved for ${selectedDate}.`;
   });
 }
 
-// ======= Navigation Buttons =======
-navButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    navButtons.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    switch(btn.dataset.section) {
-      case 'dashboard':
-        renderDashboard();
-        break;
-      case 'employees':
-        renderEmployeeDirectory();
-        break;
-      case 'attendance':
-        renderAttendanceSection();
-        break;
-      default:
-        contentArea.innerHTML = '<p>Section under construction</p>';
-    }
+// ======= Navigation Handling =======
+navButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    navButtons.forEach(btn => btn.classList.remove('active'));
+    button.classList.add('active');
+    const section = button.dataset.section;
+    if(section === 'dashboard') renderDashboard();
+    else if(section === 'employees') renderEmployeeDirectory();
+    else if(section === 'attendance') renderAttendanceSection();
   });
 });
 </script>
 
 </body>
 </html>
+
