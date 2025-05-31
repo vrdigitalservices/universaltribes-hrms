@@ -21,37 +21,42 @@ loginForm.addEventListener('submit', function(e) {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
 
-  if(username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
     loginError.textContent = '';
     loginPage.style.display = 'none';
     mainApp.style.display = 'flex';
+    activateNavButton('dashboard');
     renderDashboard();
   } else {
     loginError.textContent = 'Invalid username or password.';
   }
 });
 
+// Logout button logic
 logoutBtn.addEventListener('click', () => {
-  if(confirm('Are you sure you want to logout?')) {
+  if (confirm('Are you sure you want to logout?')) {
     loginPage.style.display = 'flex';
     mainApp.style.display = 'none';
     loginForm.reset();
     loginError.textContent = '';
-    navButtons.forEach(b => b.classList.remove('active'));
-    navButtons[0].classList.add('active');
+    deactivateAllNavButtons();
+    activateNavButton('dashboard');
+    contentArea.innerHTML = '';
   }
 });
 
 // ======= Load Employees from localStorage or default =======
 function loadEmployees() {
   const data = localStorage.getItem(EMPLOYEE_STORAGE_KEY);
-  if(data) return JSON.parse(data);
+  if (data) return JSON.parse(data);
+
   // Default demo employees
   const defaultEmps = [
     { id: 'E001', name: 'Rajkumar Rao', email: 'rajkumar@universaltribes.com', phone: '9876543210', position: 'HR Manager' },
     { id: 'E002', name: 'Amisha Rawat', email: 'amisha@universaltribes.com', phone: '9123456789', position: 'Sales Executive' },
     { id: 'E003', name: 'Priyanka Chaudhary', email: 'priyanka@universaltribes.com', phone: '9988776655', position: 'Marketing Intern' }
   ];
+
   localStorage.setItem(EMPLOYEE_STORAGE_KEY, JSON.stringify(defaultEmps));
   return defaultEmps;
 }
@@ -61,8 +66,7 @@ function saveEmployees(employees) {
   localStorage.setItem(EMPLOYEE_STORAGE_KEY, JSON.stringify(employees));
 }
 
-// ======= Render Dashboard =======
-// Function to format date and time nicely
+// ======= Format Date and Time =======
 function formatDateTime(date) {
   return date.toLocaleString('en-IN', {
     weekday: 'short',
@@ -76,7 +80,7 @@ function formatDateTime(date) {
   });
 }
 
-// Updated renderDashboard to show live date/time
+// ======= Render Dashboard =======
 function renderDashboard() {
   contentArea.innerHTML = `
     <h2>Dashboard</h2>
@@ -85,23 +89,27 @@ function renderDashboard() {
   `;
 
   const dateTimeElem = document.getElementById('live-date-time');
+
   function updateDateTime() {
     const now = new Date();
     dateTimeElem.textContent = 'Current Date & Time: ' + formatDateTime(now);
   }
 
-  updateDateTime(); // show immediately
+  updateDateTime(); // initial update
   setInterval(updateDateTime, 1000); // update every second
 }
 
 // ======= Render Employee Directory =======
 function renderEmployeeDirectory() {
   const employees = loadEmployees();
+
   let html = `
     <h2>Employee Directory</h2>
-    <table>
-      <thead>
-        <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Position</th></tr>
+    <table border="1" cellspacing="0" cellpadding="8" style="border-collapse:collapse; width:100%;">
+      <thead style="background:#f0f0f0;">
+        <tr>
+          <th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Position</th>
+        </tr>
       </thead>
       <tbody>
         ${employees.map(emp => `
@@ -116,11 +124,11 @@ function renderEmployeeDirectory() {
       </tbody>
     </table>
   `;
+
   contentArea.innerHTML = html;
 }
 
 // ======= Attendance Logic =======
-
 function loadAttendance() {
   const data = localStorage.getItem(ATTENDANCE_STORAGE_KEY);
   return data ? JSON.parse(data) : {};
@@ -133,7 +141,6 @@ function saveAttendance(attendance) {
 function renderAttendanceSection() {
   const employees = loadEmployees();
   const attendanceRecords = loadAttendance();
-
   const today = new Date().toISOString().slice(0, 10);
 
   let html = `
@@ -141,8 +148,8 @@ function renderAttendanceSection() {
     <label for="attendance-date">Select Date: </label>
     <input type="date" id="attendance-date" value="${today}" max="${today}" />
     <form id="attendance-form">
-      <table>
-        <thead>
+      <table border="1" cellspacing="0" cellpadding="8" style="border-collapse:collapse; width:100%; margin-top: 10px;">
+        <thead style="background:#f0f0f0;">
           <tr><th>Employee Name</th><th>Attendance</th></tr>
         </thead>
         <tbody>
@@ -164,13 +171,14 @@ function renderAttendanceSection() {
 
   contentArea.innerHTML = html;
 
+  // Helper to set attendance radios for selected date
   function setAttendanceForDate(date) {
     const attendanceForDate = attendanceRecords[date] || {};
     employees.forEach(emp => {
       const status = attendanceForDate[emp.id] || null;
-      if(status) {
+      if (status) {
         const radio = document.querySelector(`input[name="att-${emp.id}"][value="${status}"]`);
-        if(radio) radio.checked = true;
+        if (radio) radio.checked = true;
       } else {
         const radios = document.querySelectorAll(`input[name="att-${emp.id}"]`);
         radios.forEach(r => r.checked = false);
@@ -190,7 +198,7 @@ function renderAttendanceSection() {
   attendanceForm.addEventListener('submit', e => {
     e.preventDefault();
     const selectedDate = dateInput.value;
-    if(!selectedDate) {
+    if (!selectedDate) {
       alert('Please select a date.');
       return;
     }
@@ -209,12 +217,22 @@ function renderAttendanceSection() {
   });
 }
 
-// ======= Navigation Buttons =======
+// ======= Navigation Helpers =======
+function deactivateAllNavButtons() {
+  navButtons.forEach(b => b.classList.remove('active'));
+}
+
+function activateNavButton(section) {
+  deactivateAllNavButtons();
+  const btn = Array.from(navButtons).find(b => b.dataset.section === section);
+  if (btn) btn.classList.add('active');
+}
+
+// ======= Navigation Buttons Logic =======
 navButtons.forEach(btn => {
   btn.addEventListener('click', () => {
-    navButtons.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    switch(btn.dataset.section) {
+    activateNavButton(btn.dataset.section);
+    switch (btn.dataset.section) {
       case 'dashboard':
         renderDashboard();
         break;
@@ -229,3 +247,4 @@ navButtons.forEach(btn => {
     }
   });
 });
+
