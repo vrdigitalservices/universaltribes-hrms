@@ -1,0 +1,133 @@
+/* Reset & basic styling */
+body, html {
+  margin: 0; padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f5f7fa;
+  color: #333;
+  height: 100vh;
+}
+#login-page, #main-app {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#login-page {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+#login-form {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.25);
+  width: 320px;
+}
+#login-form h2 {
+  margin-bottom: 20px;
+  font-weight: 600;
+  text-align: center;
+}
+#login-form label {
+  display: block;
+  margin: 12px 0 6px;
+}
+#login-form input[type="text"],
+#login-form input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  outline: none;
+  font-size: 16px;
+}
+#login-form button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 18px;
+  border: none;
+  border-radius: 6px;
+  background: #4f46e5;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+#login-form button:hover {
+  background: #3730a3;
+}
+#login-error {
+  color: #ff8080;
+  margin-top: 10px;
+  text-align: center;
+}
+/* Main App layout */
+#main-app {
+  display: flex;
+  height: 100vh;
+}
+nav {
+  width: 220px;
+  background: #3b82f6;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding-top: 20px;
+}
+nav h2 {
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 24px;
+  font-size: 22px;
+}
+nav button {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 15px 20px;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+  border-left: 4px solid transparent;
+  transition: background 0.3s, border-left-color 0.3s;
+}
+nav button:hover, nav button.active {
+  background: #2563eb;
+  border-left-color: #fbbf24;
+}
+main {
+  flex-grow: 1;
+  background: white;
+  padding: 30px 40px;
+  overflow-y: auto;
+}
+h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+/* Employee Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+table thead {
+  background: #2563eb;
+  color: white;
+}
+table th, table td {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+}
+/* Zebra rows */
+table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
+/* Attendance */
+#attendance-form table th, #attendance-form table td {
+  text-align: center;
+}
+#attendance-msg {
+  margin-top: 12px;
+  font-weight: 600;
+}
