@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Universal Tribes HRMS</title>
+<style>
+  /* Reset & basic styling */
+  body, html {
+    margin: 0; padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f7fa;
+    color: #333;
+    height: 100vh;
+  }
+  #login-page, #main-app {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #login-page {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+  #login-form {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.25);
+    width: 320px;
+  }
+  #login-form h2 {
+    margin-bottom: 20px;
+    font-weight: 600;
+    text-align: center;
+  }
+  #login-form label {
+    display: block;
+    margin: 12px 0 6px;
+  }
+  #login-form input[type="text"],
+  #login-form input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    outline: none;
+    font-size: 16px;
+  }
+  #login-form button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 18px;
+    border: none;
+    border-radius: 6px;
+    background: #4f46e5;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  #login-form button:hover {
+    background: #3730a3;
+  }
+  #login-error {
+    color: #ff8080;
+    margin-top: 10px;
+    text-align: center;
+  }
+  /* Main App layout */
+  #main-app {
+    display: flex;
+    height: 100vh;
+  }
+  nav {
+    width: 220px;
+    background: #3b82f6;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding-top: 20px;
+  }
+  nav h2 {
+    text-align: center;
+    font-weight: 700;
+    margin-bottom: 24px;
+    font-size: 22px;
+  }
+  nav button {
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 15px 20px;
+    font-size: 16px;
+    text-align: left;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+    transition: background 0.3s, border-left-color 0.3s;
+  }
+  nav button:hover, nav button.active {
+    background: #2563eb;
+    border-left-color: #fbbf24;
+  }
+  main {
+    flex-grow: 1;
+    background: white;
+    padding: 30px 40px;
+    overflow-y: auto;
+  }
+  h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+  /* Employee Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  table thead {
+    background: #2563eb;
+    color: white;
+  }
+  table th, table td {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+  }
+  table tbody tr:nth-child(even) {
+    background: #f9f9f9;
+  }
+  /* Attendance */
+  #attendance-form table th, #attendance-form table td {
+    text-align: center;
+  }
+  #attendance-msg {
+    margin-top: 12px;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="login-page">
+  <form id="login-form">
+    <h2>Universal Tribes HRMS Login</h2>
+    <label for="username">Username</label>
+    <input type="text" id="username" required autocomplete="off" />
+    <label for="password">Password</label>
+    <input type="password" id="password" required autocomplete="off" />
+    <button type="submit">Login</button>
+    <div id="login-error"></div>
+  </form>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" style="display:none;">
+  <nav>
+    <h2>Universal Tribes</h2>
+    <button data-section="dashboard" class="active">Dashboard</button>
+    <button data-section="employees">Employee Directory</button>
+    <button data-section="attendance">Attendance</button>
+    <button id="logout-btn" style="margin-top:auto; background:#ef4444;">Logout</button>
+  </nav>
+  <main id="content-area">
+    <!-- Content loaded dynamically -->
+  </main>
+</div>
+
+<script>
+// ======= Data Storage Keys ==========
+const EMPLOYEE_STORAGE_KEY = 'ut_employees';
+const ATTENDANCE_STORAGE_KEY = 'ut_attendance_records';
+
+// ======= Simple Admin Credentials (hardcoded for demo) =======
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'password123';
+
+// ======= Elements ========
+const loginPage = document.getElementById('login-page');
+const loginForm = document.getElementById('login-form');
+const loginError = document.getElementById('login-error');
+const mainApp = document.getElementById('main-app');
+const navButtons = document.querySelectorAll('nav button[data-section]');
+const contentArea = document.getElementById('content-area');
+const logoutBtn = document.getElementById('logout-btn');
+
+// ======= Login Logic =======
+loginForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  if(username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    loginError.textContent = '';
+    loginPage.style.display = 'none';
+    mainApp.style.display = 'flex';
+    renderDashboard();
+  } else {
+    loginError.textContent = 'Invalid username or password.';
+  }
+});
+
+logoutBtn.addEventListener('click', () => {
+  if(confirm('Are you sure you want to logout?')) {
+    loginPage.style.display = 'flex';
+    mainApp.style.display = 'none';
+    loginForm.reset();
+    loginError.textContent = '';
+    navButtons.forEach(b => b.classList.remove('active'));
+    navButtons[0].classList.add('active');
+  }
+});
+
+// ======= Load Employees from localStorage or default =======
+function loadEmployees() {
+  const data = localStorage.getItem(EMPLOYEE_STORAGE_KEY);
+  if(data) return JSON.parse(data);
+  // Default demo employees
+  const defaultEmps = [
+    { id: 'E001', name: 'Rajkumar Rao', email: 'rajkumar@universaltribes.com', phone: '9876543210', position: 'HR Manager' },
+    { id: 'E002', name: 'Amisha Rawat', email: 'amisha@universaltribes.com', phone: '9123456789', position: 'Sales Executive' },
+    { id: 'E003', name: 'Priyanka Chaudhary', email: 'priyanka@universaltribes.com', phone: '9988776655', position: 'Marketing Intern' }
+  ];
+  localStorage.setItem(EMPLOYEE_STORAGE_KEY, JSON.stringify(defaultEmps));
+  return defaultEmps;
+}
+
+// ======= Save Employees to localStorage =======
+function saveEmployees(employees) {
+  localStorage.setItem(EMPLOYEE_STORAGE_KEY, JSON.stringify(employees));
+}
+
+// ======= Render Dashboard =======
+function renderDashboard() {
+  contentArea.innerHTML = `
+    <h2>Dashboard</h2>
+    <p>Welcome to Universal Tribes HRMS. Use the navigation menu to manage employees and attendance.</p>
+  `;
+}
+
+// ======= Render Employee Directory =======
+function renderEmployeeDirectory() {
+  const employees = loadEmployees();
+  let html = `
+    <h2>Employee Directory</h2>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Position</th></tr>
+      </thead>
+      <tbody>
+        ${employees.map(emp => `
+          <tr>
+            <td>${emp.id}</td>
+            <td>${emp.name}</td>
+            <td>${emp.email}</td>
+            <td>${emp.phone}</td>
+            <td>${emp.position}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  contentArea.innerHTML = html;
+}
+
+// ======= Attendance Logic =======
+
+function loadAttendance() {
+  const data = localStorage.getItem(ATTENDANCE_STORAGE_KEY);
+  return data ? JSON.parse(data) : {};
+}
+
+function saveAttendance(attendance) {
+  localStorage.setItem(ATTENDANCE_STORAGE_KEY, JSON.stringify(attendance));
+}
+
+function renderAttendanceSection() {
+  const employees = loadEmployees();
+  const attendanceRecords = loadAttendance();
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  let html = `
+    <h2>Attendance Tracking</h2>
+    <label for="attendance-date">Select Date: </label>
+    <input type="date" id="attendance-date" value="${today}" max="${today}" />
+    <form id="attendance-form">
+      <table>
+        <thead>
+          <tr><th>Employee Name</th><th>Attendance</th></tr>
+        </thead>
+        <tbody>
+          ${employees.map(emp => `
+            <tr data-id="${emp.id}">
+              <td>${emp.name}</td>
+              <td style="text-align:center;">
+                <label><input type="radio" name="att-${emp.id}" value="Present" /> Present</label>
+                <label style="margin-left:15px;"><input type="radio" name="att-${emp.id}" value="Absent" /> Absent</label>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <button type="submit" style="margin-top:15px; padding:10px 20px; font-size:16px; cursor:pointer;">Save Attendance</button>
+    </form>
+    <p id="attendance-msg" style="color:green; font-weight:bold; margin-top:12px;"></p>
+  `;
+
+  contentArea.innerHTML = html;
+
+  function setAttendanceForDate(date) {
+    const attendanceForDate = attendanceRecords[date] || {};
+    employees.forEach(emp => {
+      const status = attendanceForDate[emp.id] || null;
+      if(status) {
+        const radio = document.querySelector(`input[name="att-${emp.id}"][value="${status}"]`);
+        if(radio) radio.checked = true;
+      } else {
+        const radios = document.querySelectorAll(`input[name="att-${emp.id}"]`);
+        radios.forEach(r => r.checked = false);
+      }
+    });
+  }
+
+  const dateInput = document.getElementById('attendance-date');
+  dateInput.addEventListener('change', () => {
+    setAttendanceForDate(dateInput.value);
+    document.getElementById('attendance-msg').textContent = '';
+  });
+
+  setAttendanceForDate(today);
+
+  const attendanceForm = document.getElementById('attendance-form');
+  attendanceForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const selectedDate = dateInput.value;
+    if(!selectedDate) {
+      alert('Please select a date.');
+      return;
+    }
+
+    let attendanceForDate = attendanceRecords[selectedDate] || {};
+
+    employees.forEach(emp => {
+      const selectedRadio = document.querySelector(`input[name="att-${emp.id}"]:checked`);
+      attendanceForDate[emp.id] = selectedRadio ? selectedRadio.value : 'Absent';
+    });
+
+    attendanceRecords[selectedDate] = attendanceForDate;
+    saveAttendance(attendanceRecords);
+
+    document.getElementById('attendance-msg').textContent = `Attendance saved for ${selectedDate}.`;
+  });
+}
+
+// ======= Navigation Buttons =======
+navButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    navButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    switch(btn.dataset.section) {
+      case 'dashboard':
+        renderDashboard();
+        break;
+      case 'employees':
+        renderEmployeeDirectory();
+        break;
+      case 'attendance':
+        renderAttendanceSection();
+        break;
+      default:
+        contentArea.innerHTML = '<p>Section under construction</p>';
+    }
+  });
+});
+</script>
+
+</body>
+</html>
